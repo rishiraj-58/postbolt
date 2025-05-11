@@ -28,13 +28,13 @@ const PostCard: React.FC<PostCardProps> = ({
   // Debug log for visibility of buttons
   console.log("PostCard props:", { showLinkedInShare, showTwitterShare, linkedinAccountId, twitterAccountId });
 
-  const handleLinkedInShareSuccess = (postId: string) => {
+  const handleLinkedInShareSuccess = (_postId: string) => {
     setLinkedInShareSuccess(true);
     setShareError('');
     setTimeout(() => setLinkedInShareSuccess(false), 3000);
   };
 
-  const handleTwitterShareSuccess = (tweetId: string) => {
+  const handleTwitterShareSuccess = (_tweetId: string) => {
     setTwitterShareSuccess(true);
     setShareError('');
     setTimeout(() => setTwitterShareSuccess(false), 3000);

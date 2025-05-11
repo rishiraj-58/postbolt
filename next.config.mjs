@@ -1,18 +1,30 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow static HTML export when env var is set (used for CI builds)
-  output: process.env.CI ? 'export' : undefined,
-  // Configure images with allowed domains
-  images: process.env.CI 
-    ? { unoptimized: true } 
-    : {
-        domains: [
-          'media.licdn.com', // Allow LinkedIn profile images
-          'img.clerk.com',   // Allow Clerk profile images
-          'images.clerk.dev', // Also allow Clerk images from this domain
-          'pbs.twimg.com'    // Allow Twitter profile images
-        ],
+  // Configure images with allowed patterns
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'media.licdn.com',
+        pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.clerk.dev',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pbs.twimg.com',
+        pathname: '/**',
+      },
+    ],
+  },
   // For CI environments, minimize webpack optimization to prevent issues
   webpack: (config, { isServer }) => {
     if (process.env.CI) {
