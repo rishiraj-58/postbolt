@@ -1,4 +1,25 @@
 /** @type {import('next').NextConfig} */
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+  'CLERK_SECRET_KEY',
+  'NEXT_PUBLIC_APP_URL',
+  'DATABASE_URL'
+];
+
+// Check if we're in a CI environment
+const isCI = process.env.CI === 'true';
+
+// Validate environment variables
+if (!isCI) {
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      console.warn(`Warning: ${envVar} is not set in your environment variables.`);
+    }
+  }
+}
+
 const nextConfig = {
   // Configure images with allowed patterns
   images: {
@@ -63,6 +84,8 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    DATABASE_URL: process.env.DATABASE_URL,
   },
 };
 
