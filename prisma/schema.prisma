@@ -1,0 +1,76 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  authId           String?           @unique
+  name             String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  profilePic       String?
+  linkedinAccounts LinkedInAccount[]
+  posts            Post[]
+  twitterAccounts  TwitterAccount[]
+  usageLimit       UsageLimit?
+}
+
+model LinkedInAccount {
+  id           String   @id @default(uuid())
+  userId       String
+  linkedinSub  String   @unique
+  accessToken  String?  @db.Text
+  refreshToken String?  @db.Text
+  profileUrl   String?
+  name         String?
+  email        String?
+  profilePic   String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TwitterAccount {
+  id           String   @id @default(uuid())
+  userId       String
+  twitterId    String   @unique
+  username     String?
+  name         String?
+  profilePic   String?
+  refreshToken String?  @db.Text
+  accessToken  String?  @db.Text
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  prompt    String   @db.Text
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsageLimit {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  maxPosts       Int      @default(10)
+  postsGenerated Int      @default(0)
+  isPremium      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

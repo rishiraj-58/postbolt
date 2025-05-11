@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String
+  lastName  String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaces      Workspace[]
+  workspaceMember WorkspaceMember[]
+  ownedProjects   Project[]         @relation("ProjectOwner")
+  assignedTasks   Task[]            @relation("TaskAssignee")
+  createdTasks    Task[]            @relation("TaskCreator")
+  activityLogs    ActivityLog[]
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String
+  user        User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  members  WorkspaceMember[]
+  projects Project[]
+}
+
+model WorkspaceMember {
+  id          String       @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        MemberRole   @default(MEMBER)
+  status      MemberStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      String   @default("active")
+  workspaceId String
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  sprints   Sprint[]
+  tasks     Task[]
+  documents Document[]
+}
+
+model Sprint {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("planned") // planned, active, completed
+  projectId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  status      String    @default("todo") // todo, in-progress, review, done
+  priority    String    @default("medium") // low, medium, high
+  dueDate     DateTime?
+  projectId   String
+  sprintId    String?
+  assigneeId  String?
+  creatorId   String
+  type        String    @default("feature") // feature, bug, task
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+  assignee User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator  User    @relation("TaskCreator", fields: [creatorId], references: [id])
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  title     String
+  content   String?
+  projectId String
+  fileUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  entityId    String // ID of the entity this activity is related to
+  entityType  String // Type of entity (Project, Task, etc.)
+  action      String // created, updated, deleted, etc.
+  description String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  INVITED
+  REMOVED
+}
