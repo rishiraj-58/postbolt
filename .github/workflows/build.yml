@@ -24,12 +24,13 @@ jobs:
 
     - name: Debug Environment Variables
       run: |
+        echo "Checking NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY..."
         if [ -z "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ]; then
             echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is not set or empty."
         else
-            echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is set."
+            echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is set: $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
         fi
-        env:
+      env:
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
     - name: Check types
