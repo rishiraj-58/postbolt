@@ -3,6 +3,8 @@ import { getLinkedInTokens, getLinkedInUserInfo } from '../../../../../lib/linke
 import { prisma } from '../../../../../lib/prisma';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Extract the authorization code from the URL

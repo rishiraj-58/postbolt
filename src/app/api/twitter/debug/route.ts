@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '../../../../lib/prisma';
+// import { getTwitterProfile } from '../../../../lib/twitter-auth';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication with Clerk
     const authRequest = await auth();
@@ -96,10 +97,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('Twitter debug error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      { error: 'Failed to fetch Twitter debug info', details: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 });
   }
 } 

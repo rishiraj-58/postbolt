@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { isSignedIn } = useUser();

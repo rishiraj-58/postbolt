@@ -48,6 +48,22 @@ const PostCard: React.FC<PostCardProps> = ({
   // Check if we need to show any social share buttons
   const showSocialButtons = showLinkedInShare || showTwitterShare;
 
+  const handleLinkedInShare = async (_postId: string) => {
+    if (!linkedinAccountId) {
+      alert('Please connect your LinkedIn account first');
+      return;
+    }
+    window.location.href = `/api/linkedin/share?content=${encodeURIComponent(post)}&accountId=${linkedinAccountId}`;
+  };
+
+  const handleTwitterShare = async (_tweetId: string) => {
+    if (!twitterAccountId) {
+      alert('Please connect your Twitter account first');
+      return;
+    }
+    // ... rest of the code ...
+  };
+
   return (
     <div className="w-full max-w-xl mx-auto p-4 bg-gray-50 rounded shadow flex flex-col gap-2 mt-4">
       <div className="whitespace-pre-line text-gray-800">{post}</div>

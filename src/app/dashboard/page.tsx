@@ -215,11 +215,10 @@ const DashboardPage = () => {
         setPost(data.post || '');
         setUsage(data.usage || null);
       } else {
-        setPost(data.error || 'Error generating post.');
+        setError(data.error || 'Error generating post.');
         setUsage(data.usage || null);
       }
     } catch (err) {
-      setPost('Error generating post.');
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
