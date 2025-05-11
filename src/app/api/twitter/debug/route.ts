@@ -37,10 +37,17 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         updatedAt: true,
         // Mask the tokens for security
-        accessToken: (token: string | null) => !!token,
-        refreshToken: (token: string | null) => !!token
+        accessToken: true,
+        refreshToken: true
       }
     });
+    
+    // Transform the accounts to mask token presence
+    const maskedAccounts = twitterAccounts.map((account: any) => ({
+      ...account,
+      accessToken: !!account.accessToken,
+      refreshToken: !!account.refreshToken
+    }));
     
     // Get user profile
     const userProfile = await prisma.user.findUnique({
@@ -80,7 +87,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       userProfile,
       twitter: {
-        accounts: twitterAccounts,
+        accounts: maskedAccounts,
         currentId: currentTwitterId,
         hasToken: !!twitterToken,
         tokenStatus,
