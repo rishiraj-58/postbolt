@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useAuth, SignOutButton } from '@clerk/nextjs';
 import Image from 'next/image';
@@ -65,6 +65,7 @@ const DashboardPage = () => {
   const [twitterConnected, setTwitterConnected] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useAuth();
@@ -130,6 +131,49 @@ const DashboardPage = () => {
     }
   }, [isSignedIn, user, activeTab]);
 
+  const loadSavedPosts = useCallback(async () => {
+    if (!user) return;
+    
+    setSavedPostsLoading(true);
+    try {
+      // Get the database user from Clerk's user ID
+      const res = await fetch('/api/user');
+      
+      if (!res.ok) {
+        console.error('Failed to fetch user data:', await res.text());
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const data = await res.json();
+      
+      if (!data.id) {
+        console.error('Could not find database user ID');
+        setSavedPosts([]);
+        return;
+      }
+      
+      // Now fetch posts with the database user ID
+      try {
+        const posts = await getUserPosts(data.id);
+        setSavedPosts(posts);
+      } catch (postsError) {
+        console.error('Error fetching posts:', postsError);
+        setSavedPosts([]);
+      }
+    } catch (error) {
+      console.error('Error loading saved posts:', error);
+      setSavedPosts([]);
+    } finally {
+      setSavedPostsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isSignedIn && user) {
+      loadSavedPosts();
+    }
+  }, [isSignedIn, user, loadSavedPosts]);
+
   const fetchUserProfile = async () => {
     try {
       const res = await fetch('/api/user');
@@ -162,48 +206,11 @@ const DashboardPage = () => {
     }
   };
 
-  const loadSavedPosts = async () => {
-    if (!user) return;
-    
-    setSavedPostsLoading(true);
-    try {
-      // Get the database user from Clerk's user ID
-      const res = await fetch('/api/user');
-      
-      if (!res.ok) {
-        console.error('Failed to fetch user data:', await res.text());
-        throw new Error('Failed to fetch user data');
-      }
-      
-      const data = await res.json();
-      
-      if (!data.id) {
-        console.error('Could not find database user ID');
-        setSavedPosts([]);
-        setSavedPostsLoading(false);
-        return;
-      }
-      
-      // Now fetch posts with the database user ID
-      try {
-        const posts = await getUserPosts(data.id);
-        setSavedPosts(posts);
-      } catch (postsError) {
-        console.error('Error fetching posts:', postsError);
-        setSavedPosts([]);
-      }
-    } catch (error) {
-      console.error('Error loading saved posts:', error);
-      setSavedPosts([]);
-    } finally {
-      setSavedPostsLoading(false);
-    }
-  };
-
   const handleGenerate = async (input: string) => {
     setLoading(true);
     setPost('');
     setCopied(false);
+    setError(null);
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -221,6 +228,7 @@ const DashboardPage = () => {
       }
     } catch (err) {
       setPost('Error generating post.');
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

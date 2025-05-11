@@ -26,14 +26,29 @@ interface DebugInfo {
     currentId: string | null;
     hasToken: boolean;
     tokenStatus: string;
-    profileInfo: any | null;
+    profileInfo: {
+      data?: {
+        id: string;
+        name: string;
+        username: string;
+        profile_image_url?: string;
+        description?: string;
+      };
+      errors?: Array<{
+        message: string;
+        code: number;
+      }>;
+    } | null;
   };
 }
 
 interface TweetResponse {
   status?: number;
   statusText?: string;
-  data?: any;
+  data?: {
+    id: string;
+    text: string;
+  };
   error?: string;
 }
 
