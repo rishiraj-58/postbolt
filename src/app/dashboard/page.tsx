@@ -125,18 +125,11 @@ const DashboardPage = () => {
     }
   }, [isSignedIn, user]);
 
-  useEffect(() => {
-    if (isSignedIn && user && activeTab === 'saved') {
-      loadSavedPosts();
-    }
-  }, [isSignedIn, user, activeTab]);
-
   const loadSavedPosts = useCallback(async () => {
     if (!user) return;
     
     setSavedPostsLoading(true);
     try {
-      // Get the database user from Clerk's user ID
       const res = await fetch('/api/user');
       
       if (!res.ok) {
@@ -152,7 +145,6 @@ const DashboardPage = () => {
         return;
       }
       
-      // Now fetch posts with the database user ID
       try {
         const posts = await getUserPosts(data.id);
         setSavedPosts(posts);
@@ -169,10 +161,10 @@ const DashboardPage = () => {
   }, [user]);
 
   useEffect(() => {
-    if (isSignedIn && user) {
+    if (isSignedIn && user && activeTab === 'saved') {
       loadSavedPosts();
     }
-  }, [isSignedIn, user, loadSavedPosts]);
+  }, [isSignedIn, user, activeTab, loadSavedPosts]);
 
   const fetchUserProfile = async () => {
     try {

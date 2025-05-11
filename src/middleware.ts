@@ -11,7 +11,7 @@ const publicRoutes = [
 ];
 
 export default clerkMiddleware({
-  // @ts-ignore (publicRoutes is supported but TypeScript definition might be missing)
+  // @ts-expect-error - Clerk types are not properly exported
   publicRoutes
 });
 

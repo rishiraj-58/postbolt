@@ -1,21 +1,24 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { isLoaded, userId } = useAuth();
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+  const { isSignedIn } = useUser();
   const router = useRouter();
 
-  // Simple layout that ensures the dashboard is accessible
+  useEffect(() => {
+    if (!isSignedIn) {
+      router.push('/login');
+    }
+  }, [isSignedIn, router]);
+
   return (
     <div className="min-h-screen bg-gray-100">
       {children}
     </div>
   );
-} 
+};
+
+export default DashboardLayout; 

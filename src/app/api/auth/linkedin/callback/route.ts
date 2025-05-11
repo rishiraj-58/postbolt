@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLinkedInTokens, getLinkedInUserInfo, decodeIdToken } from '../../../../../lib/linkedin-auth';
+import { getLinkedInTokens, getLinkedInUserInfo } from '../../../../../lib/linkedin-auth';
 import { prisma } from '../../../../../lib/prisma';
 import { cookies } from 'next/headers';
 
