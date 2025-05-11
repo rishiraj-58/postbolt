@@ -53,10 +53,11 @@ export async function POST(request: NextRequest) {
       originalLength: text.length,
       formattedLength: formattedText.length
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Text formatting error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to format text', details: error.message },
+      { error: 'Failed to format text', details: errorMessage },
       { status: 500 }
     );
   }
@@ -80,10 +81,11 @@ export async function GET(request: NextRequest) {
       originalLength: text.length,
       formattedLength: formattedText.length
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Text formatting error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to format text', details: error.message },
+      { error: 'Failed to format text', details: errorMessage },
       { status: 500 }
     );
   }

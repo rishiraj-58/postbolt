@@ -4,12 +4,45 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+interface TwitterAccount {
+  id: string;
+  twitterId: string;
+  username: string | null;
+  name: string | null;
+  profilePic: string | null;
+  isDefault: boolean;
+  accessToken: boolean;
+  updatedAt: string;
+}
+
+interface DebugInfo {
+  userProfile: {
+    id: string;
+    email: string;
+    name: string | null;
+  };
+  twitter: {
+    accounts: TwitterAccount[];
+    currentId: string | null;
+    hasToken: boolean;
+    tokenStatus: string;
+    profileInfo: any | null;
+  };
+}
+
+interface TweetResponse {
+  status?: number;
+  statusText?: string;
+  data?: any;
+  error?: string;
+}
+
 export default function TwitterDebugPage() {
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [testTweet, setTestTweet] = useState('This is a test tweet from PostBolt! ' + new Date().toISOString());
-  const [tweetResponse, setTweetResponse] = useState<any>(null);
+  const [tweetResponse, setTweetResponse] = useState<TweetResponse | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,14 +59,15 @@ export default function TwitterDebugPage() {
         setDebugInfo(data);
         // Set default selected account if available
         if (data.twitter.accounts && data.twitter.accounts.length > 0) {
-          const defaultAccount = data.twitter.accounts.find((acc: any) => acc.isDefault);
+          const defaultAccount = data.twitter.accounts.find((acc: TwitterAccount) => acc.isDefault);
           setSelectedAccountId(defaultAccount?.id || data.twitter.accounts[0].id);
         }
       } else {
         setError(data.error || 'Failed to fetch debug info');
       }
-    } catch (err) {
-      setError('An error occurred while fetching debug info');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`An error occurred while fetching debug info: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -57,9 +91,10 @@ export default function TwitterDebugPage() {
         statusText: response.statusText,
         data
       });
-    } catch (err) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setTweetResponse({
-        error: err.message || 'Unknown error'
+        error: errorMessage
       });
     }
   };
@@ -75,6 +110,10 @@ export default function TwitterDebugPage() {
         <Link href="/dashboard" className="text-blue-600 hover:underline">Return to Dashboard</Link>
       </div>
     );
+  }
+
+  if (!debugInfo) {
+    return <div className="p-4">No debug information available</div>;
   }
 
   return (
@@ -123,7 +162,7 @@ export default function TwitterDebugPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {debugInfo.twitter.accounts.map((account: any) => (
+              {debugInfo.twitter.accounts.map((account: TwitterAccount) => (
                 <div key={account.id} className="border rounded p-3 flex items-start gap-3">
                   <div className="flex-shrink-0">
                     {account.profilePic && (
@@ -172,7 +211,7 @@ export default function TwitterDebugPage() {
                   value={selectedAccountId || ''}
                   onChange={(e) => setSelectedAccountId(e.target.value)}
                 >
-                  {debugInfo.twitter.accounts.map((account: any) => (
+                  {debugInfo.twitter.accounts.map((account: TwitterAccount) => (
                     <option key={account.id} value={account.id}>
                       {account.name} (@{account.username})
                       {account.isDefault ? ' (Default)' : ''}

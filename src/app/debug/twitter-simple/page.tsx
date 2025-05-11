@@ -3,8 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+interface TweetResult {
+  success?: boolean;
+  error?: string;
+  details?: string;
+  accountUsername?: string;
+}
+
 export default function SimpleTwitterPage() {
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<TweetResult | null>(null);
   const [loading, setLoading] = useState(false);
   
   const handlePostSimpleTweet = async () => {
@@ -24,9 +31,10 @@ export default function SimpleTwitterPage() {
       } else {
         alert(`Error: ${data.error || data.details || 'Unknown error'}`);
       }
-    } catch (err) {
-      setResult({ error: err.message });
-      alert(`Error: ${err.message}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setResult({ error: errorMessage });
+      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         updatedAt: true,
         // Mask the tokens for security
-        accessToken: token => !!token,
-        refreshToken: token => !!token
+        accessToken: (token: string | null) => !!token,
+        refreshToken: (token: string | null) => !!token
       }
     });
     
@@ -71,8 +71,9 @@ export async function GET(request: NextRequest) {
           const errorData = await response.json().catch(() => null);
           tokenStatus = `invalid: ${response.status} ${response.statusText} ${JSON.stringify(errorData || {})}`;
         }
-      } catch (error) {
-        tokenStatus = `error: ${error.message}`;
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        tokenStatus = `error: ${errorMessage}`;
       }
     }
     
@@ -86,10 +87,11 @@ export async function GET(request: NextRequest) {
         profileInfo
       }
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Twitter debug error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch Twitter debug info', details: error.message },
+      { error: 'Failed to fetch Twitter debug info', details: errorMessage },
       { status: 500 }
     );
   }
