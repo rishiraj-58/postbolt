@@ -14,6 +14,8 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "PostBolt - AI-powered social media posts",
   description: "Generate engaging LinkedIn and social media posts in seconds.",
@@ -24,12 +26,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    throw new Error('Missing Clerk publishable key. Please set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY in your environment variables.');
-  }
-
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
