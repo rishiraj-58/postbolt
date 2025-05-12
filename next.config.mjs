@@ -45,6 +45,7 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    domains: ['pbs.twimg.com', 'media.licdn.com', 'lh3.googleusercontent.com', 'img.clerk.com'],
   },
   // For CI environments, minimize webpack optimization to prevent issues
   webpack: (config, { isServer }) => {
@@ -84,9 +85,16 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     DATABASE_URL: process.env.DATABASE_URL,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'postbolt.vercel.app'],
+    },
+  },
+  // Disable static optimization for authenticated pages
+  output: 'standalone',
 };
 
 export default nextConfig;

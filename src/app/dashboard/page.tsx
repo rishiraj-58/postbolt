@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useAuth, SignOutButton } from '@clerk/nextjs';
 import Image from 'next/image';
@@ -53,7 +53,7 @@ type UserProfileData = {
   }>;
 };
 
-const DashboardPage = () => {
+function DashboardContent() {
   const [post, setPost] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -564,6 +564,12 @@ const DashboardPage = () => {
       </div>
     </main>
   );
-};
+}
 
-export default DashboardPage; 
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
+  );
+} 
