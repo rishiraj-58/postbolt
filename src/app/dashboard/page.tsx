@@ -86,18 +86,18 @@ function DashboardContent() {
     
     if (linkedInStatus === 'connected') {
       setNotification('Successfully connected to LinkedIn!');
-      // Clear the notification after 5 seconds
-      setTimeout(() => setNotification(null), 5000);
+      // Force refresh the page to ensure all state is updated
+      window.location.reload();
     } else if (twitterStatus === 'connected') {
       setNotification('Successfully connected to Twitter!');
-      // Clear the notification after 5 seconds
-      setTimeout(() => setNotification(null), 5000);
+      // Force refresh the page to ensure all state is updated
+      window.location.reload();
     } else if (linkedInStatus === 'disconnected') {
       setNotification('Successfully disconnected from LinkedIn.');
-      setTimeout(() => setNotification(null), 5000);
+      window.location.reload();
     } else if (twitterStatus === 'disconnected') {
       setNotification('Successfully disconnected from Twitter.');
-      setTimeout(() => setNotification(null), 5000);
+      window.location.reload();
     } else if (error) {
       setNotification(`Error: ${error.replace(/_/g, ' ')}`);
       // Clear the notification after 5 seconds
@@ -105,21 +105,22 @@ function DashboardContent() {
     }
   }, [searchParams]);
 
+  // Separate useEffect for fetching profile when connection status changes
   useEffect(() => {
-    // Check if LinkedIn is connected by looking for the LinkedIn token cookie
-    const linkedInToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('linkedin_token='));
+    const linkedInStatus = searchParams.get('linkedin');
+    const twitterStatus = searchParams.get('twitter');
     
-    // Check if Twitter is connected by looking for the Twitter token cookie
-    const twitterToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('twitter_token='));
-    
-    setLinkedInConnected(!!linkedInToken);
-    setTwitterConnected(!!twitterToken);
-    
-    // If user is signed in, fetch their profile data from our database
+    if (linkedInStatus === 'connected' || linkedInStatus === 'disconnected' ||
+        twitterStatus === 'connected' || twitterStatus === 'disconnected') {
+      // Add a small delay to ensure database is updated
+      setTimeout(() => {
+        fetchUserProfile();
+      }, 1000);
+    }
+  }, [searchParams]);
+
+  // Initial profile fetch when user signs in
+  useEffect(() => {
     if (isSignedIn && user) {
       fetchUserProfile();
     }
@@ -168,7 +169,14 @@ function DashboardContent() {
 
   const fetchUserProfile = async () => {
     try {
-      const res = await fetch('/api/user');
+      console.log('Fetching user profile...');
+      const res = await fetch('/api/user', {
+        // Add cache-busting parameter
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       
       if (!res.ok) {
         console.error('Failed to fetch user profile:', await res.text());
@@ -176,20 +184,22 @@ function DashboardContent() {
       }
       
       const data = await res.json();
+      console.log('User profile data:', data);
+      
       setUserProfile(data);
       
-      // Also update connection status based on database info
-      if (data.linkedinConnected) {
-        setLinkedInConnected(true);
-      }
+      // Update connection status based on database info
+      const hasLinkedIn = data.linkedinAccounts?.length > 0;
+      const hasTwitter = data.twitterAccounts?.length > 0;
       
-      if (data.twitterConnected) {
-        setTwitterConnected(true);
-      }
+      console.log('Setting connection status:', { hasLinkedIn, hasTwitter });
+      
+      setLinkedInConnected(hasLinkedIn);
+      setTwitterConnected(hasTwitter);
       
       console.log("User profile loaded:", { 
-        linkedinConnected: data.linkedinConnected, 
-        twitterConnected: data.twitterConnected,
+        linkedinConnected: hasLinkedIn, 
+        twitterConnected: hasTwitter,
         twitterAccounts: data.twitterAccounts?.length || 0,
         linkedinAccounts: data.linkedinAccounts?.length || 0
       });

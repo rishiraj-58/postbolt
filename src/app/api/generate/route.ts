@@ -80,37 +80,54 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate post with OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "deepseek/deepseek-prover-v2:free",
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant that writes engaging LinkedIn posts.' },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 300,
-      temperature: 0.8,
-    });
-    const post = completion.choices[0]?.message?.content?.trim() || '';
-
-    // Save to database
     try {
-      if (post) {
-        await savePost(dbUser.id, post, prompt);
+      const completion = await openai.chat.completions.create({
+        model: "deepseek/deepseek-prover-v2:free",
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a professional social media content creator. Write engaging, professional posts that are optimized for LinkedIn. Keep the tone professional but conversational. Include relevant hashtags at the end.' 
+          },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      });
+      
+      const post = completion.choices[0]?.message?.content?.trim() || '';
+      
+      if (!post) {
+        throw new Error('No content generated');
       }
-    } catch (saveError) {
-      console.error('Error saving post:', saveError);
-      // Continue even if saving fails
-    }
 
-    return NextResponse.json({ 
-      post,
-      usage: usage ? {
-        ...usage,
-        postsRemaining: Math.max(0, usage.postsRemaining - 1),
-        postsGenerated: usage.postsGenerated + 1
-      } : null
-    });
-  } catch (error) {
+      // Save to database
+      try {
+        await savePost(dbUser.id, post, prompt);
+      } catch (saveError) {
+        console.error('Error saving post:', saveError);
+        // Continue even if saving fails
+      }
+
+      return NextResponse.json({ 
+        post,
+        usage: usage ? {
+          ...usage,
+          postsRemaining: Math.max(0, usage.postsRemaining - 1),
+          postsGenerated: usage.postsGenerated + 1
+        } : null
+      });
+    } catch (aiError: any) {
+      console.error('AI generation error:', aiError);
+      return NextResponse.json({ 
+        error: 'Failed to generate post. Please try again.',
+        details: process.env.NODE_ENV === 'development' ? aiError.message : undefined
+      }, { status: 500 });
+    }
+  } catch (error: any) {
     console.error('Generate error:', error);
-    return NextResponse.json({ error: 'Failed to generate post.' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to generate post. Please try again.',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: 500 });
   }
 } 

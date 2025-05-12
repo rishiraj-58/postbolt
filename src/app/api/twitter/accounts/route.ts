@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
     // Find all Twitter accounts for this user
     const twitterAccounts = await prisma.twitterAccount.findMany({
       where: {
-        userId: userId,
-        isActive: true
+        userId: userId
       },
       select: {
         id: true,

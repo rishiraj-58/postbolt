@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '../../../lib/prisma';
 import { cookies } from 'next/headers';
 
@@ -25,47 +24,29 @@ interface TwitterAccount {
 
 export async function GET() {
   try {
-    // Get the current authenticated user from Clerk
-    const user = await currentUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Get user ID from cookies
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_id')?.value;
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found. Please sign in again.' }, { status: 401 });
     }
     
     try {
-      // Find the user in our database using Clerk's user ID
-      let dbUser = await prisma.user.findFirst({
-        where: { authId: user.id },
+      // Find the user in our database using the user ID from cookies
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
         include: {
           linkedinAccounts: true,
           twitterAccounts: true
         }
       });
       
-      // If user doesn't exist, create one
       if (!dbUser) {
-        dbUser = await prisma.user.create({
-          data: {
-            authId: user.id,
-            email: user.emailAddresses[0]?.emailAddress || '',
-            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-            profilePic: user.imageUrl,
-            usageLimit: {
-              create: {
-                maxPosts: 10,
-                postsGenerated: 0,
-                isPremium: false,
-              },
-            },
-          },
-          include: {
-            linkedinAccounts: true,
-            twitterAccounts: true
-          }
-        });
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       
       // Get active Twitter account from cookies if available
-      const cookieStore = await cookies();
       const twitterId = cookieStore.get('twitter_id')?.value;
       
       // Find default accounts for both platforms
