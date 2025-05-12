@@ -3,10 +3,27 @@ import { getLinkedInTokens, getLinkedInUserInfo } from '../../../../../lib/linke
 import { prisma } from '../../../../../lib/prisma';
 import { cookies } from 'next/headers';
 
+// Force dynamic rendering to prevent build-time errors
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+// Add error handling for Prisma initialization
+let prismaClient: typeof prisma;
+try {
+  prismaClient = prisma;
+} catch (error) {
+  console.error('Failed to initialize Prisma client:', error);
+  prismaClient = null as any;
+}
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Prisma client is initialized
+    if (!prismaClient) {
+      console.error('Prisma client not initialized');
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=db_error`);
+    }
+
     // Extract the authorization code from the URL
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
@@ -49,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     if (userId) {
       // User is already logged in, connect LinkedIn account to their profile
-      const existingUser = await prisma.user.findUnique({
+      const existingUser = await prismaClient.user.findUnique({
         where: { id: userId },
         include: {
           linkedinAccounts: true
@@ -64,7 +81,7 @@ export async function GET(request: NextRequest) {
 
         if (existingAccount) {
           // Update the existing LinkedIn account with new tokens
-          await prisma.linkedInAccount.update({
+          await prismaClient.linkedInAccount.update({
             where: { id: existingAccount.id },
             data: {
               accessToken: access_token,
@@ -80,7 +97,7 @@ export async function GET(request: NextRequest) {
           // If this is the first LinkedIn account, set it as default
           const isDefault = existingUser.linkedinAccounts.length === 0;
           
-          await prisma.linkedInAccount.create({
+          await prismaClient.linkedInAccount.create({
             data: {
               userId: userId,
               linkedinSub: userInfo.sub,
@@ -95,7 +112,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Set LinkedIn tokens in cookies
-        const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?linkedin=connected`);
+        const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard?linkedin=connected`);
         
         response.cookies.set('linkedin_token', access_token, { 
           httpOnly: true, 
@@ -123,7 +140,7 @@ export async function GET(request: NextRequest) {
     }
 
     // If not connected to a logged-in user, check if this LinkedIn account is already linked to any user
-    const existingLinkedInAccount = await prisma.linkedInAccount.findFirst({
+    const existingLinkedInAccount = await prismaClient.linkedInAccount.findFirst({
       where: {
         linkedinSub: userInfo.sub
       },
@@ -137,7 +154,7 @@ export async function GET(request: NextRequest) {
       const user = existingLinkedInAccount.user;
       
       // Update the LinkedIn account with new tokens
-      await prisma.linkedInAccount.update({
+      await prismaClient.linkedInAccount.update({
         where: { id: existingLinkedInAccount.id },
         data: {
           accessToken: access_token,
@@ -150,7 +167,7 @@ export async function GET(request: NextRequest) {
       });
       
       // Store the token in secure, httpOnly cookies
-      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?linkedin=connected`);
+      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard?linkedin=connected`);
       
       response.cookies.set('linkedin_token', access_token, { 
         httpOnly: true, 
@@ -185,7 +202,7 @@ export async function GET(request: NextRequest) {
     // Check if a user exists with this email
     let existingUser = null;
     if (userInfo.email) {
-      existingUser = await prisma.user.findFirst({
+      existingUser = await prismaClient.user.findFirst({
         where: {
           email: userInfo.email
         },
@@ -197,7 +214,7 @@ export async function GET(request: NextRequest) {
 
     if (existingUser) {
       // User exists with this email, connect the LinkedIn account
-      await prisma.linkedInAccount.create({
+      await prismaClient.linkedInAccount.create({
         data: {
           userId: existingUser.id,
           linkedinSub: userInfo.sub,
@@ -211,7 +228,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Store the tokens in secure, httpOnly cookies
-      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?linkedin=connected`);
+      const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard?linkedin=connected`);
       
       response.cookies.set('linkedin_token', access_token, { 
         httpOnly: true, 
@@ -243,7 +260,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create a new user with this LinkedIn account
-    const newUser = await prisma.user.create({
+    const newUser = await prismaClient.user.create({
       data: {
         email: userInfo.email || `${userInfo.sub}@linkedin.com`,
         name: userInfo.name || '',
@@ -270,7 +287,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Store the tokens in secure, httpOnly cookies
-    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?linkedin=connected`);
+    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard?linkedin=connected`);
     
     // Set secure, httpOnly cookies for the tokens
     response.cookies.set('linkedin_token', access_token, { 
@@ -303,6 +320,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('LinkedIn callback error:', error);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?error=server_error`);
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=server_error`);
   }
 } 
